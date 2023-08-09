@@ -1,0 +1,67 @@
+;; * * * * * * * * * * * * *     
+;; Jonah Jay
+;; CS 115 Fall 2020    
+;; Assignment 09, Question 2    
+;; * * * * * * * * * * * * *
+
+(define-struct utc (sign hours mins))
+;; A UTC is a (make-utc (anyof '+ '-) Nat Nat)
+;; Requires: hours <= 12, mins < 60
+;;           if hours = 12, mins must be 0
+;;
+;; Note that UTC+12:00 and UTC-12:00 represent the same time zone,
+;; and UTC+00:00 and UTC-00:00 represent the same time zone. 
+
+(define-struct location (city timezone))
+;; A Location is a (make-location Str UTC)
+
+(define iqaluit (make-location "Iqaluit" (make-utc '- 5 0))) 
+(define london (make-location "London" (make-utc '+ 0 0)))
+(define moosejaw (make-location "Moose Jaw" (make-utc '- 7 0))) 
+(define mumbai (make-location "Mumbai" (make-utc '+ 5 30)))
+(define nairobi (make-location "Nairobi" (make-utc '+ 3 0)))
+(define seoul (make-location "Seoul" (make-utc '+ 9 0)))
+(define stjohns (make-location "St. John's" (make-utc '- 3 30)))
+(define waterloo (make-location "Waterloo" (make-utc '- 5 0)))
+(define winnipeg (make-location "Winnipeg" (make-utc '- 6 0)))
+  
+(define bakerisland (make-location "Baker Island" (make-utc '+ 12 0)))
+(define sydney (make-location "Sydney" (make-utc '+ 11 0)))
+  
+(define participants 
+  (list iqaluit london moosejaw mumbai nairobi seoul stjohns waterloo winnipeg))
+
+;; (working-group lol UTC) consumes a list of defined locations
+;; and a defined UTC produces a list of strings representing the cities in locations
+;; that are either in the same time zone as group-tz or within one hour of that time zone
+;; working-group: (listof location) utc -> (listof Str)
+;; Example;
+(check-expect (working-group participants (make-utc '- 6 0)) (list "Iqaluit" "Moose Jaw" "Waterloo" "Winnipeg"))
+
+              
+(define (working-group lol UTC)
+  (map (lambda (n) (location-city n))
+       (filter (lambda (n)
+         (or
+            (or (equal? (location-timezone n) UTC)
+              (and (equal? (utc-sign (location-timezone n)) (utc-sign UTC))
+                   (or (and (< (- (utc-hours (location-timezone n)) (utc-hours UTC)) 1)
+                            (> (- (utc-hours (location-timezone n)) (utc-hours UTC)) (- 1)))
+                       (and (or (= (- (utc-hours (location-timezone n)) (utc-hours UTC)) 1)
+                                (= (- (utc-hours (location-timezone n)) (utc-hours UTC)) (- 1)))
+                                (= (utc-mins (location-timezone n)) (utc-mins UTC))))))
+            (and (equal? (utc-hours (location-timezone n)) 12) (equal? (utc-hours UTC) 12)) 
+            (and (or (equal? (utc-hours (location-timezone n)) 0) (equal? (utc-hours UTC) 0))
+                  (or (equal? (utc-hours (location-timezone n)) 12) (equal? (utc-hours UTC) 12))) 
+            (and (and (or (equal? (utc-hours (location-timezone n)) 11) (equal? (utc-hours UTC) 11))
+                  (or (equal? (utc-hours (location-timezone n)) 12) (equal? (utc-hours UTC) 12)))
+                  (>= (utc-mins (location-timezone n)) (utc-mins UTC)))))
+                                          lol)))
+
+;; Tests
+;(check-expect (working-group participants (make-utc '- 2 0)) empty)
+(check-expect (working-group participants (make-utc '- 12 0))(list "London"))
+(check-expect (working-group (list sydney bakerisland) (make-utc '- 12 0))(list "Sydney" "Baker Island"))
+(check-expect (working-group participants (make-utc '+ 1 30)) empty)
+
+
