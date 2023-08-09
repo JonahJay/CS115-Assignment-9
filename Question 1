@@ -1,0 +1,88 @@
+;; * * * * * * * * * * * * *     
+;; Jonah Jay  
+;; CS 115 Fall 2020    
+;; Assignment 09, Question 1    
+;; * * * * * * * * * * * * *
+
+;; * * * * * * * * * * * * *
+;; Question 1a)
+;; * * * * * * * * * * * * *
+
+(define-struct coin (name value))
+ ;; A Coin is a structure (make-coin Sym Num)
+ ;; Where
+ ;;   name is the name of the type of coin 
+ ;;   value is the face value of the coin
+ ;; Requires:
+ ;;   value >= 0
+
+(define penny (make-coin 'penny 0.01))
+(define nickel (make-coin 'nickel 0.05))
+(define dime (make-coin 'dime 0.1))
+
+;; (larger-coin c1 c2) consumes two defined coins c1 c2
+;; and produces the coin with the higher value of the two
+;; larger-coin: coin coin -> coin
+;; Example;
+(check-expect (larger-coin nickel dime) (make-coin 'dime 0.1))
+
+(define (larger-coin c1 c2)
+  (cond
+    [(> (coin-value c1) (coin-value c2)) c1]
+    [(= (coin-value c1) (coin-value c2)) c1]
+    [else c2]))
+
+; Test
+(check-expect (larger-coin dime dime) (make-coin 'dime 0.1))
+(check-expect (larger-coin penny dime) (make-coin 'dime 0.1))
+(check-expect (larger-coin nickel penny) (make-coin 'nickel 0.05))
+
+;; * * * * * * * * * * * * *
+;; Question 1b)
+;; * * * * * * * * * * * * *
+
+
+;; (worthless loc name) consumes a list of defined coins and a symbol
+;; and produces a new list of defined coins
+;; excluding those that have the same name as the symbol given
+;; worthless: (listof coin) sym  -> (listof coin)
+;; Example;
+(check-expect (worthless (list penny dime penny nickel) 'penny)
+              (list (make-coin 'penny 0) (make-coin 'dime 0.1) (make-coin 'penny 0) (make-coin 'nickel 0.05)))
+
+(define (worthless loc name)
+  (map (lambda (loc)
+            (cond
+              [(equal? name (coin-name loc)) (make-coin name 0)]
+              [else loc])) loc))
+
+;; Test
+(check-expect (worthless (list penny penny nickel) 'dime)
+              (list (make-coin 'penny 0.01) (make-coin 'penny 0.01) (make-coin 'nickel 0.05)))
+(check-expect (worthless (list penny dime penny nickel) 'dime)
+              (list (make-coin 'penny 0.01) (make-coin 'dime 0) (make-coin 'penny 0.01) (make-coin 'nickel 0.05)))
+(check-expect (worthless (list penny dime penny nickel) 'nickel)
+              (list (make-coin 'penny 0.01) (make-coin 'dime 0.1) (make-coin 'penny 0.01) (make-coin 'nickel 0)))
+
+
+;; * * * * * * * * * * * * *
+;; Question 1c)
+;; * * * * * * * * * * * * *
+
+
+;; (total-value loc) consumes a list of defined coins 
+;; and produces the sum of the value of all the coins in the list of coins
+;; total-value: (listof coin) -> Nat
+;; Example;
+(check-expect (total-value (list penny dime penny nickel)) 0.17)
+
+(define (total-value loc)
+  (foldr + 0 (map (lambda (n)
+                    (coin-value n)) loc)))
+
+
+;; Test
+(check-expect (total-value (list penny penny)) 0.02)
+(check-expect (total-value (list dime nickel nickel)) 0.20)
+(check-expect (total-value (list dime dime dime)) 0.3)
+(check-expect (total-value (list dime nickel penny)) 0.16)
